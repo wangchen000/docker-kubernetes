@@ -1,0 +1,27 @@
+install ingress controller:
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
+  run: kubectl edit deploy nginx-ingress-controller -n ingress-nginx (add containers:hostNetwork: true)
+
+create ingress(dashboard.yml):
+--------------------------------------------------------------------------------
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/secure-backends: "true"(https redirect)
+  namespace: kube-system
+spec:
+  tls:
+  - hosts:
+    - www.justdogo.org
+    secretName: justdogo-secret
+  rules:
+  - host: www.justdogo.org
+    http:
+      paths:
+      - backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 443
+--------------------------------------------------------------------------------

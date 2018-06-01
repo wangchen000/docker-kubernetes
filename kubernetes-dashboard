@@ -1,0 +1,31 @@
+create:
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
+create account(admin.yml) :
+--------------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin
+  namespace: kube-system
+
+--------------------------------------------------------------------------------
+
+bind role(admin-user-role-binding.yaml):
+--------------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin
+  namespace: kube-system
+--------------------------------------------------------------------------------
+
+get token:
+  kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')

@@ -1,0 +1,29 @@
+create secret:
+  sudo kubectl create secret tls --namespace=kube-system justdogo-secret --cert /etc/letsencrypt/live/justdogo.org/fullchain.pem --key /etc/letsencrypt/live/justdogo.org/privkey.pem
+
+create ingress:
+--------------------------------------------------------------------------------
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+name: dashboard-ingress
+annotations:
+  kubernetes.io/ingress.class: nginx
+  kubernetes.io/tls-acme: "true"
+  ingress.kubernetes.io/ssl-redirect: "true"
+  ingress.kubernetes.io/use-port-in-redirects: "true"
+namespace: kube-system
+spec:
+tls:
+- hosts:
+  - www.justdogo.org
+  secretName: justdogo-secret
+rules:
+- host: www.justdogo.org
+  http:
+    paths:
+    - path: /
+      backend:
+        serviceName: kubernetes-dashboard
+        servicePort: 443
+--------------------------------------------------------------------------------

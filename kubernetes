@@ -1,0 +1,23 @@
+1.install kubeadm,kubectl,kubelet:
+  add source:
+      deb https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial main
+  update source:
+      sudo apt-get update
+  install:
+      sudo apt-get install -y kubelet kubeadm kubectl --allow-unauthenticated
+
+2.init kubernetes
+  sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=10.255.0.254
+
+3.join kubernetes:
+   kubeadm join 10.255.0.254:6443 --token qc204z.ehb57labd2ib4vw6 --discovery-token-ca-cert-hash sha256:e91831733cd208400813967b72afc6c0346f26e66e2ae0a2a31e28757d311ab3
+
+4.delete node:
+   kubectl drain <node name> --delete-local-data --force --ignore-daemonsets
+   kubectl delete node <node name>
+   进入node主机： kubeadm reset
+
+
+缺点： 由于kubeadm还是处于测试阶段所以在master上只有一个单节点的etcd
+
+高可用部署方案是：https://kubernetes.io/docs/setup/independent/high-availability/
