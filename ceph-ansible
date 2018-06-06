@@ -1,0 +1,82 @@
+locale init:
+  .bashrc 中加入 export LC_ALL='en_US.UTF-8'
+
+1.create ceph user
+  sudo useradd -m -s /bin/bash cephuser
+  sudo passwd cephuser
+  echo "cephuser ALL = (root) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/cephuser
+  sudo chmod 0440 /etc/sudoers.d/cephuser
+  sudo sed -i s'/Defaults requiretty/#Defaults requiretty'/g /etc/sudoers
+
+以下操作在cephuser用户中执行：
+
+2. hosts(每个节点)
+  sudo vim /etc/hosts
+  ------------------------------------------------------------------------------
+  10.255.0.254 master
+  10.255.0.122 node1
+  10.255.0.81  node2
+  ------------------------------------------------------------------------------
+3. 主节点中
+ ssh-keygen
+  ssh-keygen
+  vim .ssh/config
+  ------------------------------------------------------------------------------
+  Host master
+  HostName 10.255.0.254
+  User cephuser
+  Port 22
+
+  Host node1
+  HostName 10.255.0.122
+  User cephuser
+  Port 22
+
+  Host node2
+  HostName 10.255.0.81
+  User cephuser
+  Port 22
+  ------------------------------------------------------------------------------
+  ssh-copy-id master
+  ssh-copy-id node1
+  ssh-copy-id node2
+
+4. install ansible(注意： 不同的ceph-ansible分支需要不同的ansible节点)
+  sudo apt-get update
+  sudo apt-get install software-properties-common
+  sudo apt-add-repository ppa:ansible/ansible
+  sudo apt-get update
+  sudo apt-get install ansible
+
+5. get ceph-ansible
+  git clone https://github.com/ceph/ceph-ansible.git
+  pip install -r requirements.txt
+
+6. update ceph-ansible config
+  cd ceph-ansible
+  cp site.yml.sample site.yml
+  vi site.yml
+  ------------------------------------------------------------------------------
+  至少需要 mons osds rgws 这几个 其他的需要就留着不需要就注释掉
+  ------------------------------------------------------------------------------
+  cd group_vars
+  cp all.yml.sample all.yml
+  vi all.yml
+  ------------------------------------------------------------------------------
+  修改：
+    ceph_stable： true
+    ceph_origin： repository
+    ceph_repository： community
+    ceph_stable_release：luminous
+    monitor_interface： ens3(网卡名)
+    public_network： 10.255.0.0/24(根据自己的ip段！！！设置)
+  ------------------------------------------------------------------------------
+  cp osds.yml.sample osds.yml
+  vi osds.yml
+  ------------------------------------------------------------------------------
+  修改：
+    journal_collocation： true
+    devices：
+      - /dev/vdb
+    osd_scenario: collocated  
+  ------------------------------------------------------------------------------
