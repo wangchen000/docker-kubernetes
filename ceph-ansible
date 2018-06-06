@@ -18,7 +18,7 @@ locale init:
   10.255.0.81  node2
   ------------------------------------------------------------------------------
 3. 主节点中
- ssh-keygen
+  ssh-keygen
   ssh-keygen
   vim .ssh/config
   ------------------------------------------------------------------------------
@@ -78,5 +78,5 @@ locale init:
     journal_collocation： true
     devices：
       - /dev/vdb
-    osd_scenario: collocated  
+    osd_scenario: collocated
   ------------------------------------------------------------------------------
