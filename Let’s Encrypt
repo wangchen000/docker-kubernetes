@@ -3,7 +3,7 @@ sudo apt-get install software-properties-common
 sudo add-apt-repository ppa:certbot/certbot
 sudo apt-get update
 sudo apt-get install certbot
-sudo certbot certonly -d "*.justdogo.com" --manual --preferred-challenges dns-01  --server https://acme-v02.api.letsencrypt.org/directory
+sudo certbot certonly -d "*.justdogo.org" --manual --preferred-challenges dns-01  --server https://acme-v02.api.letsencrypt.org/directory
 
 
 参考: https://www.hi-linux.com/posts/6968.html

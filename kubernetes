@@ -9,8 +9,17 @@
 2.init kubernetes
   sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=10.255.0.254
 
+  使某个linux用户能够使用kubectl：
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+  安装集群网络：
+    kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.10.0/Documentation/kube-flannel.yml
+
+
 3.join kubernetes:
-   kubeadm join 10.255.0.254:6443 --token qc204z.ehb57labd2ib4vw6 --discovery-token-ca-cert-hash sha256:e91831733cd208400813967b72afc6c0346f26e66e2ae0a2a31e28757d311ab3
+   kubeadm join 10.255.0.254:6443 --token 449muo.e3epmesyffry5ntp --discovery-token-ca-cert-hash sha256:c5982b49e1d0dde0a6c5f7005eb27e49b23aa46b4deb8842afa4fb9f0dfa865f
 
 4.delete node:
    kubectl drain <node name> --delete-local-data --force --ignore-daemonsets

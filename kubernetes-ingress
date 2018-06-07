@@ -1,0 +1,55 @@
+1. install ingress nginx controller:
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
+  edit yml:
+    kubectl edit deploy nginx-ingress-controller -n ingress-nginx
+    ----------------------------------------------------------------------------
+    添加属性：
+      template.spec.containers下面添加 hostNetwork: true
+    查找master的lable：
+      kubectl get nodes --show-labels
+      template.spec.containers下面添加:
+                    nodeSelector:
+                      kubernetes.io/hostname: node1（使用自己的label 不能是master节点）
+      如果需要只是这个cobtroller部署到master需要：
+            template.spec.containers下面添加:
+                                    tolerations:
+                                    - operator: "Exists"（kubernetes有污点属性 加上污点的node都不参与pod的调度 如果需要强制部署到有污点的node需要加入该属性无视所有污点）
+    ----------------------------------------------------------------------------
+2. get ca
+  sudo apt-get update
+  sudo apt-get install software-properties-common
+  sudo add-apt-repository ppa:certbot/certbot
+  sudo apt-get update
+  sudo apt-get install certbot
+  sudo certbot certonly -d "*.justdogo.org" --manual --preferred-challenges dns-01  --server https://acme-v02.api.letsencrypt.org/directory
+  参考: https://www.hi-linux.com/posts/6968.html
+3. create secret
+  sudo kubectl create secret tls --namespace=kube-system justdogo-secret --cert /etc/letsencrypt/live/justdogo.org/fullchain.pem --key /etc/letsencrypt/live/justdogo.org/privkey.pem
+4. create ingress:
+--------------------------------------------------------------------------------
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/use-port-in-redirects: "true"
+    nginx.ingress.kubernetes.io/secure-backends: "true"
+  namespace: kube-system
+spec:
+  tls:
+  - hosts:
+    - www.justdogo.org
+    - dashboard.justdogo.org
+    secretName: justdogo-secret
+  rules:
+  - host: dashboard.justdogo.org
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 443
+--------------------------------------------------------------------------------

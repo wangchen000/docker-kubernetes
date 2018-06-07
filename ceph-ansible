@@ -57,7 +57,7 @@ locale init:
   cp site.yml.sample site.yml
   vi site.yml
   ------------------------------------------------------------------------------
-  至少需要 mons osds rgws 这几个 其他的需要就留着不需要就注释掉
+  至少需要 mons osds rgws mgrs 这几个 其他的需要就留着不需要就注释掉
   ------------------------------------------------------------------------------
   cd group_vars
   cp all.yml.sample all.yml
