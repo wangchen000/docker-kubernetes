@@ -80,3 +80,6 @@ locale init:
       - /dev/vdb
     osd_scenario: collocated
   ------------------------------------------------------------------------------
+
+7. install ceph-cluster
+  ansible-playbook site.yml
