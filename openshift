@@ -1,0 +1,171 @@
+
+1.install coreDNS
+  1. 从github中下载coreDNS的二进制文件
+  2. 解压后复制进 /usr/bin
+  3. sudo mkdir -p /etc/coredns/zones
+  4. cd /etc/coredns
+  5. 创建Corefile
+--------------------------------------------------------------------------------
+cluster {
+    file /etc/coredns/zones/cluster
+}
+.:53 {
+    forward . 100.64.8.1:53
+}
+--------------------------------------------------------------------------------
+  6. cd zones 创建cluster文件
+--------------------------------------------------------------------------------
+$TTL    604800
+@       IN      SOA     develop. develop.cluster. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+; name servers - NS records
+    IN      NS      develop.cluster.
+
+; name servers - A records
+develop.cluster.                    IN      A       10.255.0.181
+master.cluster.                     IN      A       10.255.0.254
+node1.cluster.                      IN      A       10.255.0.122
+node2.cluster.                      IN      A       10.255.0.81
+--------------------------------------------------------------------------------
+  7. 创建开机启动文件
+    1. vim /etc/systemd/system/coredns.service
+--------------------------------------------------------------------------------
+[Unit]
+Description=CoreDNS DNS server
+Documentation=https://coredns.io
+After=network.target
+
+[Service]
+PermissionsStartOnly=true
+LimitNOFILE=1048576
+LimitNPROC=512
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+User=root
+WorkingDirectory=~
+ExecStart=/usr/bin/coredns -conf=/etc/coredns/Corefile
+ExecReload=/bin/kill -SIGUSR1 $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+--------------------------------------------------------------------------------
+     2. systemctl start coredns
+     3. systemctl enable coredns
+1.server pre-install
+  master(root):
+    1. yum update
+    2. yum install NetworkManager-tui
+    3. systemctl start NetworkManager
+    4. nmtui 修改dns(注意dns只能有一个)
+    5. systemctl enable NetworkManager
+    6. vim /etc/ssh/sshd_config
+            修改 PermitRootLogin yes
+       systemctl restart sshd
+    7. vim /etc/hostname 修改hostname(注意hostname需要前缀或者后缀 dns使用 hosts中不能有hostname的解析不然dns解析到的本地地址会变成127.0.0.1)
+  node(root):
+    1. yum update
+    2. yum install NetworkManager-tui
+    3. systemctl start NetworkManager
+    4. nmtui 修改dns(注意dns只能有一个)
+    5. systemctl enable NetworkManager
+    6. vim /etc/ssh/sshd_config
+         修改 PermitRootLogin yes
+       systemctl restart sshd
+    7. vim /etc/hostname 修改hostname(注意hostname需要前缀或者后缀 dns使用 hosts中不能有hostname的解析不然dns解析到的本地地址会变成127.0.0.1)
+
+2.master pre-install
+    1. yum install -y wget git ansible python-cryptography pyOpenSSL.x86_64
+    2. git clone https://github.com/openshift/openshift-ansible.git
+       cd ~/openshift-ansible
+       git checkout release-3.9
+    3. ansible ssh login config:
+       1.ssh-keygen(一路回车创建)
+       2.复制~/.ssh/id_rsa.pub 中的key到每台机器的~/.ssh/authorized_keys中，包括master节点
+       3.实验是否可用  ansible all -m ping
+
+3.ansible hosts config
+    1. vim /etc/ansible/hosts
+--------------------------------------------------------------------------------
+# Create an OSEv3 group that contains the master, nodes, etcd, and lb groups.
+# # The lb group lets Ansible configure HAProxy as the load balancing solution.
+# # Comment lb out if your load balancer is pre-configured.
+[OSEv3:children]
+masters
+nodes
+etcd
+# lb
+glusterfs
+#
+#  # Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+ansible_ssh_user=root
+openshift_deployment_type=origin
+openshift_release=v3.9.0
+openshift_image_tag=v3.9.0
+openshift_use_dnsmasq=true
+openshift_disable_check=docker_storage,memory_availability,docker_image_availability
+#
+openshift_http_proxy=http://10.255.0.181:8118/
+openshift_https_proxy=http://10.255.0.181:8118/
+openshift_no_proxy=localhost,127.0.0.1,172.30.0.0/16,10.255.0.0/24
+#
+#    # Uncomment the following to enable htpasswd authentication; defaults to
+#    # DenyAllPasswordIdentityProvider.
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
+openshift_master_htpasswd_users={'dreams': '$apr1$kjWCSf.O$H8Zy7Ah/2wb/rjBEIuaMU.'}
+#    #openshift_master_htpasswd_file=/root/openshift-ansible/htpasswd
+#
+#     # Native high availability cluster method with optional load balancer.
+#     # If no lb group is defined installer assumes that a load balancer has
+#     # been preconfigured. For installation the value of
+#     # openshift_master_cluster_hostname must resolve to the load balancer
+#     # or to one or all of the masters defined in the inventory if no load
+#     # balancer is present.
+#     openshift_master_cluster_method=native
+#     openshift_master_cluster_hostname=ocp1-cluster.bj1.newtranx.com
+#     openshift_master_cluster_public_hostname=ocp1-cluster.bj1.newtranx.com
+openshift_master_default_subdomain=openshift.justdogo.org
+openshift_enable_service_catalog=false
+openshift_storage_glusterfs_timeout=1000000
+#
+#        openshift_metrics_install_metrics=false
+#        openshift_metrics_hawkular_hostname=hawkular-metrics.ocp2.localdomain
+#        openshift_metrics_cassandra_storage_type=dynamic
+#        openshift_metrics_startup_timeout=1000000
+#
+#         # host group for masters
+[masters]
+master.cluster
+#         vm-ocp1-master-2.bj1.newtranx.com
+#         vm-ocp1-master-3.bj1.newtranx.com
+#
+#          # host group for etcd
+[etcd]
+master.cluster
+#          vm-ocp1-master-2.bj1.newtranx.com
+#          vm-ocp1-master-3.bj1.newtranx.com
+#
+#           # Specify load balancer host
+#           [lb]
+#           vm-ocp1-lb-1.bj1.newtranx.com
+#
+#            # host group for nodes, includes region info
+[nodes]
+master.cluster
+node1.cluster openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+node2.cluster openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+#            vm-ocp1-node-3.bj1.newtranx.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+#            vm-ocp1-infra-1.bj1.newtranx.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+#            vm-ocp1-infra-2.bj1.newtranx.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+[glusterfs]
+node1.cluster glusterfs_devices='[ "/dev/vdb" ]'
+node2.cluster glusterfs_devices='[ "/dev/vdb" ]'
+master.cluster glusterfs_devices='[ "/dev/vdb" ]'
+--------------------------------------------------------------------------------
