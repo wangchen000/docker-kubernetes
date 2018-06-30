@@ -7,11 +7,11 @@
       template.spec.containers下面添加 hostNetwork: true
     查找master的lable：
       kubectl get nodes --show-labels
-      template.spec.containers下面添加:
+      template.spec下面添加:
                     nodeSelector:
                       kubernetes.io/hostname: node1
       如果需要只是这个cobtroller部署到master需要：
-            template.spec.containers下面添加:
+            template.spec下面添加:
                                     tolerations:
                                     - operator: "Exists"（kubernetes有污点属性 加上污点的node都不参与pod的调度 如果需要强制部署到有污点的node需要加入该属性无视所有污点）
     ----------------------------------------------------------------------------
