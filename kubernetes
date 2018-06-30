@@ -19,7 +19,7 @@
 
 
 3.join kubernetes:
-   kubeadm join 10.255.0.254:6443 --token 449muo.e3epmesyffry5ntp --discovery-token-ca-cert-hash sha256:c5982b49e1d0dde0a6c5f7005eb27e49b23aa46b4deb8842afa4fb9f0dfa865f
+   kubeadm join 10.255.0.254:6443 --token 1n5m2x.plyrnsdd87hxwkdn --discovery-token-ca-cert-hash sha256:c47df9c60528fe67a009b1b7dca4e6855e150c5937f139f6e7d0324004a84a5d
 
 4.delete node:
    kubectl drain <node name> --delete-local-data --force --ignore-daemonsets
