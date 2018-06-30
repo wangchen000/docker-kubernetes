@@ -9,7 +9,7 @@
       kubectl get nodes --show-labels
       template.spec.containers下面添加:
                     nodeSelector:
-                      kubernetes.io/hostname: node1（使用自己的label 不能是master节点）
+                      kubernetes.io/hostname: node1
       如果需要只是这个cobtroller部署到master需要：
             template.spec.containers下面添加:
                                     tolerations:
