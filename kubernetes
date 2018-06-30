@@ -7,7 +7,7 @@
       sudo apt-get install -y kubelet kubeadm kubectl --allow-unauthenticated
 
 2.init kubernetes
-  sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=10.255.0.254
+  sudo (HTTPS_PROXY=http://10.255.0.122:8118 需要代理时加上即可) kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=10.255.0.254
 
   使某个linux用户能够使用kubectl：
     mkdir -p $HOME/.kube
