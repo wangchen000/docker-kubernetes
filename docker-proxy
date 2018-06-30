@@ -1,8 +1,11 @@
-1.sudo mkdir -p /etc/systemd/system/docker.service.d
-2.cd /etc/systemd/system/docker.service.d
-3.sudo vim http-proxy.conf
+create docker-proxy.sh
+--------------------------------------------------------------------------------
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo cat <<EOF >/etc/systemd/system/docker.service.d/http-proxy.conf
 [Service]
-Environment="HTTPS_PROXY=http://proxy.example.com:80/"
-4.sudo systemctl daemon-reload
-5.systemctl show --property=Environment docker
-5.sudo systemctl restart docker
+Environment="HTTPS_PROXY=http://10.255.0.122:8118/"
+EOF
+sudo systemctl daemon-reload
+systemctl show --property=Environment docker
+sudo systemctl restart docker
+--------------------------------------------------------------------------------
