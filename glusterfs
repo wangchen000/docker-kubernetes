@@ -1,0 +1,44 @@
+1.安装前准备
+  每个节点：
+     1.安装glusterfs工具：
+       sudo add-apt-repository ppa:gluster/glusterfs-3.12（具体的版本需要和使用的glusterfs镜像中的版本一致）
+       sudo apt-get update
+       sudo apt-get install glusterfs-server
+     2.删除配置一起停止本地开启的glusterd服务（该服务需要容器开启）
+       sudo rm -fr /var/lib/gluster
+       sudo service glusterd stop
+     3.开启内核支持：
+       modprobe -- dm_snapshot
+       modprobe -- dm_mirror
+       modprobe -- dm_thin_pool
+     4.修改/etc/hosts
+       添加每个节点以及master节点的hostname映射
+     预安装的ansible脚本已经写好
+2.安装：
+  1.下载gluster-kubernetes
+    git clone https://github.com/gluster/gluster-kubernetes.git
+    使用git checkout <分支> 选择需要用的分支
+  2.修改配置
+    如果需要开启secret 修改hekeki.json.template(不需要改名)中的相关配置
+    cp topology.json.sample topology.json
+    修改topology.json 中的配置添加硬盘 其中manage：(节点主机名)域名  storage：ip
+  3.清空需要加入glusterfs的硬盘(每个存储节点都需要):
+    sudo dd if=/dev/zero of=/dev/vdb bs=1M status=progress
+  4.开始安装
+    ./gk-deploy -g(重新启动一个glusterfs集群不使用已经安装好的) -n namespace(需要部署到那个namespace)
+  5.安装完成后创建storageclass
+--------------------------------------------------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+provisioner: kubernetes.io/glusterfs
+parameters:
+  resturl: "http://10.244.2.5:8080"
+  clusterid: "ee1348b85ea3269727747657a4128222"
+  restauthenabled: "true"
+  restuser: "admin"
+  gidMin: "40000"
+  gidMax: "50000"
+  volumetype: "replicate:3"
+--------------------------------------------------------------------------------
